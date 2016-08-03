@@ -24,6 +24,7 @@ to use the tool on other distributions.
 # Dependencies
 # ------------------------------------------------------------------------
 
+import subprocess
 import os
 
 from WebappConfig.debug       import OUT
@@ -52,15 +53,18 @@ def config_protect(cat, pn, pvr, pm):
         return portage.settings['CONFIG_PROTECT']
 
     elif pm == "paludis":
-        cmd="cave print-id-environment-variable -b --format '%%v\n' --variable-name CONFIG_PROTECT %s/%s" % (cat,pn)
+        # for new installations we require cat to be set, but older ones
+        # may still be installed without a 'cat' record in the appdb
+        pkg = "%s/%s" % (cat, pn) if cat else pn
 
-        fi, fo, fe = os.popen3(cmd)
-        fi.close()
-        result_lines = fo.readlines()
-        fo.close()
-        fe.close()
+        # paludis has a CONFIG_PROTECT only for installed packages
+        output = subprocess.check_output([
+            "cave", "print-id-environment-variable",
+            "-b", "--format", "%v",
+            "--variable-name", "CONFIG_PROTECT",
+            "%s::installed" % pkg])
 
-        return ' '.join(result_lines).strip()
+        return output.decode("utf-8").strip()
     else:
         OUT.die("Unknown package manager: " + pm)
 
@@ -74,9 +78,11 @@ def want_category(config):
     Paludis: mandatory
     '''
 
-    if config.config.get('USER', 'package_manager') == "portage":
+    pm = config.config.get('USER', 'package_manager')
+
+    if pm == "portage":
         return
-    elif config.config.get('USER', 'package_manager') == "paludis":
+    elif pm == "paludis":
         if not config.config.has_option('USER', 'cat'):
             OUT.die("Package name must be in the form CAT/PN")
     else:
@@ -84,7 +90,10 @@ def want_category(config):
 
 def get_root(config):
     '''Returns the $ROOT variable'''
-    if config.config.get('USER', 'package_manager') == "portage":
+
+    pm = config.config.get('USER', 'package_manager')
+
+    if pm == "portage":
         try:
             import portage
         except ImportError as e:
@@ -92,29 +101,26 @@ def get_root(config):
 
         return portage.settings['ROOT']
 
-    elif config.config.get('USER', 'package_manager') == "paludis":
+    elif pm == "paludis":
         cat = config.maybe_get('cat')
         pn  = config.maybe_get('pn')
 
         if cat and pn:
-            cmd="cave print-id-environment-variable -b --format '%%v\n' --variable-name ROOT %s/%s" % (cat,pn)
+            output = subprocess.check_output([
+                "cave", "print-id-environment-variable",
+                "-b", "--format", "%v",
+                "--variable-name", "ROOT",
+                "%s/%s" % (cat, pn)])
 
-            fi, fo, fe = os.popen3(cmd)
-            fi.close()
-            result_lines = fo.readlines()
-            fo.close()
-            fe.close()
+            root = output.decode("utf-8").strip()
 
-            if result_lines[0].strip():
-                return result_lines[0].strip()
-            else:
-                return '/'
+            return root if root else '/'
         else:
             return '/'
     else:
         OUT.die("Unknown package manager: " + pm)
 
-def package_installed(full_name, pm):
+def package_installed(pkg_spec, pm):
     '''
     This function identifies installed packages.
     The Portage part is stolen from gentoolkit.
@@ -128,7 +134,7 @@ def package_installed(full_name, pm):
             OUT.die("Portage libraries not found, quitting:\n%s" % e)
 
         try:
-             t = portage.db[portage.root]["vartree"].dbapi.match(full_name)
+             t = portage.db[portage.root]["vartree"].dbapi.match(pkg_spec)
         # catch the "ambiguous package" Exception
         except ValueError as e:
             if isinstance(e[0], list):
@@ -141,20 +147,21 @@ def package_installed(full_name, pm):
 
     elif pm == "paludis":
 
-        cmd="cave print-best-version '%s'" % (full_name)
+        pipes = subprocess.Popen([
+            "cave", "print-best-version",
+            "%s" % (pkg_spec)],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        fout, ferr = pipes.communicate()
 
-        fi, fo, fe = os.popen3(cmd)
-        fi.close()
-        result_lines = fo.readlines()
-        error_lines  = fe.readlines()
-        fo.close()
-        fe.close()
+        package = fout.decode("utf-8").strip()
+        error_lines = ferr.decode("utf-8").split('\n')
 
         if error_lines:
             for i in error_lines:
                 OUT.warn(i)
 
-        return ' '.join(result_lines)
+        return package
 
     else:
         OUT.die("Unknown package manager: " + pm)

@@ -314,11 +314,12 @@ class Config:
                                   self.config.get('USER', 'package_manager') ))
 
     def set_vars(self):
+        # determine_appsuffix possibly changes 'cat',
+        # but we need the original value first to determine config_protect
+        self.set_configprotect()
 
         if not self.config.has_option('USER', 'my_appsuffix'):
             self.determine_appsuffix()
-
-        self.set_configprotect()
 
     def determine_appsuffix(self):
 
