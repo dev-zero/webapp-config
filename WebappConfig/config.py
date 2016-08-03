@@ -1165,8 +1165,9 @@ class Config:
 
         if self.work == 'query':
 
-            # The user needs to specify package and version
+            # The user needs to specify category/package and version
             # for this action
+            wrapper.want_category(self)
             self.check_package_set()
             self.check_version_set()
 

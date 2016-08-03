@@ -57,7 +57,7 @@ webapp_read_config() {
 	debug-print-function $FUNCNAME $*
 
 	if has_version '>=app-admin/webapp-config-1.50'; then
-		ENVVAR=$(${WEBAPP_CONFIG} --query ${PN} ${PVR}) || die "Could not read settings from webapp-config!"
+		ENVVAR=$(${WEBAPP_CONFIG} --query ${CATEGORY}/${PN} ${PVR}) || die "Could not read settings from webapp-config!"
 		eval ${ENVVAR}
 	elif [[ "${WEBAPP_OPTIONAL}" != "yes" ]]; then
 		# ETC_CONFIG might not be available
@@ -501,7 +501,7 @@ webapp_pkg_postinst() {
 				elog "${PN}-${PVR} is not installed - using install mode"
 			fi
 
-			my_cmd="${WEBAPP_CONFIG} -h localhost -u root -d ${INSTALL_DIR} ${my_mode} ${PN} ${PVR}"
+			my_cmd="${WEBAPP_CONFIG} -h localhost -u root -d ${INSTALL_DIR} ${my_mode} ${CATEGORY}/${PN} ${PVR}"
 			elog "Running ${my_cmd}"
 			${my_cmd}
 
@@ -517,7 +517,7 @@ webapp_pkg_postinst() {
 			elog
 			elog "To install ${PN}-${PVR} into a virtual host, run the following command:"
 			elog
-			elog "    webapp-config -h <host> -d ${PN} -I ${PN} ${PVR}"
+			elog "    webapp-config -h <host> -d ${PN} -I ${CATEGORY}/${PN} ${PVR}"
 			elog
 			elog "For more details, see the webapp-config(8) man page"
 		fi
@@ -529,7 +529,7 @@ webapp_pkg_postinst() {
 		elog
 		elog "To install ${PN}-${PVR} into a virtual host, run the following command:"
 		elog
-		elog "    webapp-config -h <host> -d ${PN} -I ${PN} ${PVR}"
+		elog "    webapp-config -h <host> -d ${PN} -I ${CATEGORY}/${PN} ${PVR}"
 		elog
 		elog "For more details, see the webapp-config(8) man page"
 	fi
