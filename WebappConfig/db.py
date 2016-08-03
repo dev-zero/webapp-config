@@ -592,13 +592,7 @@ class WebappSource(AppHierarchy):
 
         OUT.debug('Verifying package ' + self.package_name(), 6)
 
-        # package_installed() does not handle "/PN" correctly
-        package = self.pn
-
-        if self.category:
-            package = self.category + '/' + self.pn
-
-        # not using self.package_name() here as we don't need pvr
+        if not wrapper.package_installed("=%s" % self.package_name(), self.pm):
             return 1
 
         # unfortunately, just because a package has been installed, it
