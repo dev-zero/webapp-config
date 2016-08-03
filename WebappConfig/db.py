@@ -621,7 +621,7 @@ class WebappSource(AppHierarchy):
         if available == 0:
             OUT.info('  Yes, we do')
         if available == 1:
-            OUT.die('  Please emerge ' + self.package_name() + ' first.')
+            OUT.die('  Please install ' + self.package_name() + ' first.')
         if available == 3:
             OUT.die('  ' + self.package_name() + ' is not compatible with '
                     'webapp-config.\nIf it should be, report this at '
