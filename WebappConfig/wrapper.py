@@ -27,8 +27,6 @@ to use the tool on other distributions.
 import subprocess
 import os
 
-from WebappConfig.debug       import OUT
-
 from WebappConfig.debug   import OUT
 from WebappConfig.version import WCVERSION
 
@@ -169,14 +167,15 @@ def package_installed(pkg_spec, pm):
 if __name__ == '__main__':
     OUT.info('\nPACKAGE MANAGER WRAPPER')
     OUT.info('---------------\n')
-    if package_installed('=app-admin/webapp-config-' + WCVERSION, 'portage'):
+    pm = os.environ.get('PACKAGE_MANAGER', 'portage')
+    if package_installed('~app-admin/webapp-config-' + WCVERSION, pm):
         a = 'YES'
     else:
         a = 'NO'
 
     OUT.info('package_installed("webapp-config-'
              + WCVERSION + '") : ' + a + '\n')
-    OUT.info('config_protect : ' + config_protect('app-admin','webapp-config',WCVERSION,'portage'))
+    OUT.info('config_protect : ' + config_protect('app-admin', 'webapp-config', WCVERSION, pm))
     OUT.info('protect_prefix : ' + protect_prefix)
     OUT.info('update_command : ' + update_command)
     OUT.info('bugs_link : ' + bugs_link)
